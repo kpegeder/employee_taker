@@ -1,0 +1,20 @@
+{
+  "name": "empolyee-tracker",
+  "version": "1.0.0",
+  "description": "tracker the employees in a company",
+  "main": "employeeCOM.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node employeeCOM.js",
+    "watch": "nodeman employeeCOM.js"
+  },
+  "keywords": [],
+  "author": "",
+  "dependencies": {
+    "inquirer": "^6.2.1",
+    "mysql": "^2.16.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.4"
+  }
+}
