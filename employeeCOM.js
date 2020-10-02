@@ -1,8 +1,8 @@
 // Dependencies
 const mysql = require("mysql");
 const inquirer = require("inquirer");
-// const addEmployee = require("./questions/addEmployee");
-let employee = [];
+const idQuery = require("./lib/idQuery");
+let employees = [];
 let jobs = [];
 let departments = [];
 let managers = [];
@@ -46,6 +46,13 @@ connection.connect(function (err) {
 });
 
 async function start() {
+  // Get a list of the emploees and managers
+  getEmployee();
+  getManager();
+  getDepartment();
+  getJob();
+
+  // Get the user action
   let answers = await inquirer.prompt(introQuestion);
   switch (answers.action) {
     case "View All Employees":
@@ -108,35 +115,50 @@ const introQuestion = [
 ];
 
 function viewAll() {
-  let view = `SELECT employee.id, employee.first_name, employee.last_name, job.title, job.salary, department.branch, employee.manager_id
-FROM ((employee
-INNER JOIN job ON employee.job_id = job.id)
-INNER JOIN department ON job.department_id = department.id);`;
-  connection.query(view, function (err, result) {
+  let newQuery = new idQuery();
+
+  connection.query(newQuery.viewAll_Q(), function (err, result) {
     if (err) throw err;
     console.table(result);
     start();
   });
 }
 
-function viewDepartment() {
-  let department = `SELECT staff.id, staff.first_name, staff.last_name, job.title, job.salary, department.branch, CONCAT(staff.first_name, " ", staff.last_name) AS manager
-FROM employee staff
-INNER JOIN job ON job.id = staff.job_id
-INNER JOIN department ON department.id = job.department_id
-INNER JOIN employee ON employee.id = staff.manager_id
-WHERE department.id = 1;`;
-  connection.query(department, function (err, result) {
+async function viewDepartment() {
+  let selectDept = await inquirer.prompt([
+    {
+      type: "list",
+      message: "What department would you like to see?",
+      name: "departmentChoice",
+      choices: function () {
+        let choiceArr = [];
+        for (let i = 0; i < departments.length; i++) {
+          let tempChoice = {
+            name: departments[i].name,
+            value: departments[i].value,
+          };
+          choiceArr.push(tempChoice);
+        }
+        return choiceArr;
+      },
+    },
+  ]);
+
+  let newQuery = new idQuery(parseInt(selectDept.departmentChoice));
+
+  connection.query(newQuery.viewDepartment_Q(), function (err, result) {
     if (err) throw err;
     console.table(result);
     start();
   });
 }
 
+// Create function to add an employee
 async function addNewEmployee() {
-  getEmployee();
-  getJob();
+  // Questions about the new employee info
   let newEmployee = await inquirer.prompt(addEmployee);
+
+  // Add new employee to the database
   connection.query(
     "INSERT INTO employee SET ?",
     {
@@ -148,60 +170,53 @@ async function addNewEmployee() {
     function (err) {
       if (err) throw err;
       console.log("You succesfully added an new employee!");
-      // re-prompt the user for if they want to bid or post
+      // re-prompt the user
       start();
     }
   );
 }
 
+// Create function to remove an employee
 function removeEmployee() {
-  console.log(employee);
-  connection.query("SELECT id, first_name, last_name FROM employee", function (
-    err,
-    results
-  ) {
-    if (err) throw err;
-
-    inquirer
-      .prompt([
-        {
-          name: "removeEmployee",
-          type: "list",
-          message: "Which employee doe you want to remove?",
-          choices: function () {
-            let choiceArr = [];
-            for (let i = 0; i < results.length; i++) {
-              let tempChoice = {
-                name: results[i].first_name + " " + results[i].last_name,
-                value: results[i].id,
-              };
-              choiceArr.push(tempChoice);
-            }
-            return choiceArr;
-          },
-        },
-      ])
-      .then(function (response) {
-        let name = response.removeEmployee;
-        console.log(name);
-        connection.query(
-          "DELETE FROM employee WHERE ?",
-          {
-            id: name,
-          },
-          function (err, res) {
-            if (err) throw err;
-            console.log("You have removed an employee.");
-            // Call readProducts AFTER the DELETE completes
-            start();
+  inquirer
+    .prompt([
+      {
+        name: "removeEmployee",
+        type: "list",
+        message: "Which employee doe you want to remove?",
+        choices: function () {
+          let choiceArr = [];
+          for (let i = 0; i < employees.length; i++) {
+            let tempChoice = {
+              name: employees[i].name,
+              value: employees[i].value,
+            };
+            choiceArr.push(tempChoice);
           }
-        );
-      });
-  });
+          return choiceArr;
+        },
+      },
+    ])
+    .then(function (response) {
+      let name = response.removeEmployee;
+
+      connection.query(
+        "DELETE FROM employee WHERE ?",
+        {
+          id: name,
+        },
+        function (err, res) {
+          if (err) throw err;
+          console.log("You have removed an employee.");
+          // Call readProducts AFTER the DELETE completes
+          start();
+        }
+      );
+    });
 }
 
 function getEmployee() {
-  employee = [];
+  employees = [];
   connection.query("SELECT id, first_name, last_name FROM employee", function (
     err,
     results
@@ -211,7 +226,7 @@ function getEmployee() {
         name: results[i].first_name + " " + results[i].last_name,
         value: results[i].id,
       };
-      employee.push(tempEmployee);
+      employees.push(tempEmployee);
     }
   });
 }
@@ -317,10 +332,10 @@ const addEmployee = [
           value: null,
         },
       ];
-      for (let i = 0; i < employee.length; i++) {
+      for (let i = 0; i < employees.length; i++) {
         let tempChoice = {
-          name: employee[i].name,
-          value: employee[i].value,
+          name: employees[i].name,
+          value: employees[i].value,
         };
         choiceArr.push(tempChoice);
       }
