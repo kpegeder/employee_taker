@@ -1,10 +1,11 @@
 // Dependencies
 const mysql = require("mysql");
 const inquirer = require("inquirer");
-const addEmployee = require("./questions/addEmployee");
+// const addEmployee = require("./questions/addEmployee");
 let employee = [];
 let jobs = [];
 let departments = [];
+let managers = [];
 
 // Create a connection to the database
 const connection = mysql.createConnection({
@@ -54,7 +55,7 @@ async function start() {
       viewDepartment();
       break;
     case "View All Employees By Manager":
-      getDepartment();
+      getEmployee();
       break;
     case "Add Employee":
       addNewEmployee();
@@ -119,7 +120,7 @@ INNER JOIN department ON job.department_id = department.id);`;
 }
 
 function viewDepartment() {
-  let department = `SELECT staff.id, staff.first_name, staff.last_name, job.title, job.salary, department.branch, CONCAT(employee.first_name, " ", employee.last_name) AS manager
+  let department = `SELECT staff.id, staff.first_name, staff.last_name, job.title, job.salary, department.branch, CONCAT(staff.first_name, " ", staff.last_name) AS manager
 FROM employee staff
 INNER JOIN job ON job.id = staff.job_id
 INNER JOIN department ON department.id = job.department_id
@@ -133,6 +134,8 @@ WHERE department.id = 1;`;
 }
 
 async function addNewEmployee() {
+  getEmployee();
+  getJob();
   let newEmployee = await inquirer.prompt(addEmployee);
   connection.query(
     "INSERT INTO employee SET ?",
@@ -140,6 +143,7 @@ async function addNewEmployee() {
       first_name: newEmployee.employeeFirstName,
       last_name: newEmployee.employeeLastName,
       job_id: newEmployee.employeeRole,
+      manager_id: newEmployee.employeeManager,
     },
     function (err) {
       if (err) throw err;
@@ -197,6 +201,7 @@ function removeEmployee() {
 }
 
 function getEmployee() {
+  employee = [];
   connection.query("SELECT id, first_name, last_name FROM employee", function (
     err,
     results
@@ -212,6 +217,7 @@ function getEmployee() {
 }
 
 function getJob() {
+  jobs = [];
   connection.query("SELECT id, title FROM job", function (err, results) {
     for (let i = 0; i < results.length; i++) {
       let tempJob = {
@@ -224,6 +230,7 @@ function getJob() {
 }
 
 function getDepartment() {
+  departments = [];
   connection.query("SELECT id, branch FROM department", function (
     err,
     results
@@ -239,17 +246,85 @@ function getDepartment() {
 }
 
 function getManager() {
-  console.log(departments);
-  connection.query("SELECT id, branch FROM department", function (
-    err,
-    results
-  ) {
-    for (let i = 0; i < results.length; i++) {
-      let tempDept = {
-        name: results[i].branch,
-        value: results[i].id,
-      };
-      departments.push(tempDept);
+  managers = [];
+  connection.query(
+    "SELECT id, first_name, last_name, manager_id FROM employee",
+    function (err, results) {
+      for (let i = 0; i < results.length; i++) {
+        if (results[i].manager_id != null) {
+          let tempManager = {
+            name: results[i].first_name + " " + results[i].last_name,
+            value: results[i].id,
+          };
+          managers.push(tempManager);
+        }
+      }
     }
-  });
+  );
 }
+
+// Validation functions
+function verifyName(name) {
+  if (name === "") {
+    return "Please enter a name";
+  } else if (!isNaN(name)) {
+    return "Please don't enter a number";
+  } else if (name.length > 26) {
+    return "Please enter a shorter name";
+  }
+
+  return true;
+}
+
+const addEmployee = [
+  {
+    type: "input",
+    message: "What is the employee's first name?",
+    name: "employeeFirstName",
+    validate: verifyName,
+  },
+  {
+    type: "input",
+    message: "What is the employee's last name?",
+    name: "employeeLastName",
+    validate: verifyName,
+  },
+  {
+    type: "list",
+    message: "What is the employee's role?",
+    name: "employeeRole",
+    choices: function () {
+      let choiceArr = [];
+      for (let i = 0; i < jobs.length; i++) {
+        let tempChoice = {
+          name: jobs[i].title,
+          value: jobs[i].value,
+        };
+        choiceArr.push(tempChoice);
+      }
+      return choiceArr;
+    },
+  },
+
+  {
+    type: "list",
+    message: "What is the employee's manager?",
+    name: "employeeManager",
+    choices: function () {
+      let choiceArr = [
+        {
+          name: "None",
+          value: null,
+        },
+      ];
+      for (let i = 0; i < employee.length; i++) {
+        let tempChoice = {
+          name: employee[i].name,
+          value: employee[i].value,
+        };
+        choiceArr.push(tempChoice);
+      }
+      return choiceArr;
+    },
+  },
+];
