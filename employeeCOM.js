@@ -2,6 +2,9 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 const addEmployee = require("./questions/addEmployee");
+let employee = [];
+let jobs = [];
+let departments = [];
 
 // Create a connection to the database
 const connection = mysql.createConnection({
@@ -45,10 +48,13 @@ async function start() {
   let answers = await inquirer.prompt(introQuestion);
   switch (answers.action) {
     case "View All Employees":
+      viewAll();
       break;
     case "View All Employees By Department":
+      viewDepartment();
       break;
     case "View All Employees By Manager":
+      getDepartment();
       break;
     case "Add Employee":
       addNewEmployee();
@@ -100,6 +106,32 @@ const introQuestion = [
   },
 ];
 
+function viewAll() {
+  let view = `SELECT employee.id, employee.first_name, employee.last_name, job.title, job.salary, department.branch, employee.manager_id
+FROM ((employee
+INNER JOIN job ON employee.job_id = job.id)
+INNER JOIN department ON job.department_id = department.id);`;
+  connection.query(view, function (err, result) {
+    if (err) throw err;
+    console.table(result);
+    start();
+  });
+}
+
+function viewDepartment() {
+  let department = `SELECT staff.id, staff.first_name, staff.last_name, job.title, job.salary, department.branch, CONCAT(employee.first_name, " ", employee.last_name) AS manager
+FROM employee staff
+INNER JOIN job ON job.id = staff.job_id
+INNER JOIN department ON department.id = job.department_id
+INNER JOIN employee ON employee.id = staff.manager_id
+WHERE department.id = 1;`;
+  connection.query(department, function (err, result) {
+    if (err) throw err;
+    console.table(result);
+    start();
+  });
+}
+
 async function addNewEmployee() {
   let newEmployee = await inquirer.prompt(addEmployee);
   connection.query(
@@ -118,13 +150,14 @@ async function addNewEmployee() {
   );
 }
 
-async function removeEmployee() {
-  connection.query("SELECT first_name, last_name FROM employee", function (
+function removeEmployee() {
+  console.log(employee);
+  connection.query("SELECT id, first_name, last_name FROM employee", function (
     err,
     results
   ) {
     if (err) throw err;
-    // console.log(results);
+
     inquirer
       .prompt([
         {
@@ -134,19 +167,18 @@ async function removeEmployee() {
           choices: function () {
             let choiceArr = [];
             for (let i = 0; i < results.length; i++) {
-              choiceArr.push(
-                i + " " + results[i].first_name + " " + results[i].last_name
-              );
-              // + " " + results[i].last_name);
+              let tempChoice = {
+                name: results[i].first_name + " " + results[i].last_name,
+                value: results[i].id,
+              };
+              choiceArr.push(tempChoice);
             }
             return choiceArr;
-
-            // choiceArr.push(results[i].)
           },
         },
       ])
       .then(function (response) {
-        let name = response.removeEmployee.split(" ")[0];
+        let name = response.removeEmployee;
         console.log(name);
         connection.query(
           "DELETE FROM employee WHERE ?",
@@ -160,8 +192,64 @@ async function removeEmployee() {
             start();
           }
         );
-        // response.removeEmployee.split(" ")[1];
-        // console.log(response.removeEmployee.split(" ")[0]);
       });
+  });
+}
+
+function getEmployee() {
+  connection.query("SELECT id, first_name, last_name FROM employee", function (
+    err,
+    results
+  ) {
+    for (let i = 0; i < results.length; i++) {
+      let tempEmployee = {
+        name: results[i].first_name + " " + results[i].last_name,
+        value: results[i].id,
+      };
+      employee.push(tempEmployee);
+    }
+  });
+}
+
+function getJob() {
+  connection.query("SELECT id, title FROM job", function (err, results) {
+    for (let i = 0; i < results.length; i++) {
+      let tempJob = {
+        title: results[i].title,
+        value: results[i].id,
+      };
+      jobs.push(tempJob);
+    }
+  });
+}
+
+function getDepartment() {
+  connection.query("SELECT id, branch FROM department", function (
+    err,
+    results
+  ) {
+    for (let i = 0; i < results.length; i++) {
+      let tempDept = {
+        name: results[i].branch,
+        value: results[i].id,
+      };
+      departments.push(tempDept);
+    }
+  });
+}
+
+function getManager() {
+  console.log(departments);
+  connection.query("SELECT id, branch FROM department", function (
+    err,
+    results
+  ) {
+    for (let i = 0; i < results.length; i++) {
+      let tempDept = {
+        name: results[i].branch,
+        value: results[i].id,
+      };
+      departments.push(tempDept);
+    }
   });
 }
