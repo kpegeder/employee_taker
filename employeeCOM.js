@@ -82,6 +82,7 @@ async function start() {
       addDepartment();
       break;
     case "Remove Department":
+      removeDepartment();
       break;
     case "Update Department":
       updateDepartment();
@@ -93,6 +94,9 @@ async function start() {
       addRole();
       break;
     case "Remove Role":
+      removeRole();
+      break;
+    case "View Department Salary":
       break;
 
     default:
@@ -120,6 +124,7 @@ const introQuestion = [
       "View All Roles",
       "Add Role",
       "Remove Role",
+      "View Department Salary",
       "Exit",
     ],
   },
@@ -360,7 +365,7 @@ function removeEmployee() {
       {
         name: "removeEmployee",
         type: "list",
-        message: "Which employee doe you want to remove?",
+        message: "Which employee do you want to remove?",
         choices: function () {
           let choiceArr = [];
           for (let i = 0; i < employees.length; i++) {
@@ -500,6 +505,85 @@ async function updateDepartment() {
     if (err) throw err;
     start();
   });
+}
+
+// Create function to remove an role
+function removeRole() {
+  inquirer
+    .prompt([
+      {
+        name: "removePos",
+        type: "list",
+        message: "Which employee doe you want to remove?",
+        choices: function () {
+          let choiceArr = [];
+          for (let i = 0; i < jobs.length; i++) {
+            let tempChoice = {
+              name: jobs[i].title,
+              value: jobs[i].value,
+            };
+            choiceArr.push(tempChoice);
+          }
+          return choiceArr;
+        },
+      },
+    ])
+    .then(function (response) {
+      let roleID = response.removePos;
+
+      connection.query(
+        "DELETE FROM job WHERE ?",
+        {
+          id: roleID,
+        },
+        function (err, res) {
+          if (err) throw err;
+          console.log("You have removed this job.");
+
+          start();
+        }
+      );
+    });
+}
+
+// Create function to delete a department
+function removeDepartment() {
+  inquirer
+    .prompt([
+      {
+        name: "removeDept",
+        type: "list",
+        message: "Which employee doe you want to remove?",
+        choices: function () {
+          let choiceArr = [];
+          console.log(departments);
+          for (let i = 0; i < departments.length; i++) {
+            let tempChoice = {
+              name: departments[i].name,
+              value: departments[i].value,
+            };
+            choiceArr.push(tempChoice);
+          }
+          return choiceArr;
+        },
+      },
+    ])
+    .then(function (response) {
+      let deptID = response.removeDept;
+
+      connection.query(
+        "DELETE FROM department WHERE ?",
+        {
+          id: deptID,
+        },
+        function (err, res) {
+          if (err) throw err;
+          console.log("You have removed this department.");
+
+          start();
+        }
+      );
+    });
 }
 
 function getEmployee() {
