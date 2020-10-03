@@ -2,6 +2,7 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 const idQuery = require("./lib/idQuery");
+const updateQuery = require("./lib/updateQuery");
 let employees = [];
 let jobs = [];
 let departments = [];
@@ -62,7 +63,7 @@ async function start() {
       viewDepartment();
       break;
     case "View All Employees By Manager":
-      getEmployee();
+      viewManager();
       break;
     case "Add Employee":
       addNewEmployee();
@@ -71,14 +72,18 @@ async function start() {
       removeEmployee();
       break;
     case "Update Employee Role":
+      updateRole();
       break;
     case "Update Employee Manager":
+      updateManager();
       break;
     case "Add Department":
       break;
     case "Remove Department":
       break;
     case "Update Department":
+      break;
+    case "View All Role":
       break;
     case "Add Role":
       break;
@@ -107,6 +112,7 @@ const introQuestion = [
       "Add Department",
       "Remove Department",
       "Update Department",
+      "View All Roles",
       "Add Role",
       "Remove Role",
       "Exit",
@@ -147,6 +153,151 @@ async function viewDepartment() {
   let newQuery = new idQuery(parseInt(selectDept.departmentChoice));
 
   connection.query(newQuery.viewDepartment_Q(), function (err, result) {
+    if (err) throw err;
+    console.table(result);
+    start();
+  });
+}
+
+async function viewManager() {
+  let selectManager = await inquirer.prompt([
+    {
+      type: "list",
+      message: "Which manager employee's would you like to see?",
+      name: "managerChoice",
+      choices: function () {
+        let choiceArr = [];
+        console.log(managers);
+        for (let i = 0; i < managers.length; i++) {
+          let tempChoice = {
+            name: managers[i].name,
+            value: managers[i].value,
+          };
+          choiceArr.push(tempChoice);
+        }
+
+        return choiceArr;
+      },
+    },
+  ]);
+
+  let newQuery = new idQuery(parseInt(selectManager.managerChoice));
+
+  connection.query(newQuery.viewDepartment_Q(), function (err, result) {
+    if (err) throw err;
+    console.table(result);
+    start();
+  });
+}
+
+async function updateRole() {
+  let selectUpdate = await inquirer.prompt([
+    {
+      type: "list",
+      message: "Which employee would you like to change roles?",
+      name: "employeeID",
+      choices: function () {
+        let choiceArr = [];
+        for (let i = 0; i < employees.length; i++) {
+          let tempChoice = {
+            name: employees[i].name,
+            value: employees[i].value,
+          };
+          choiceArr.push(tempChoice);
+        }
+
+        return choiceArr;
+      },
+    },
+    {
+      type: "list",
+      message: "What is the new role?",
+      name: "newRole",
+      choices: function () {
+        let choiceArr = [];
+        for (let i = 0; i < jobs.length; i++) {
+          let tempChoice = {
+            name: jobs[i].title,
+            value: jobs[i].value,
+          };
+          choiceArr.push(tempChoice);
+        }
+
+        return choiceArr;
+      },
+    },
+  ]);
+
+  let newQuery = new updateQuery(
+    parseInt(selectUpdate.employeeID),
+    parseInt(selectUpdate.newRole)
+  );
+
+  connection.query(newQuery.updateJob_Q(), function (err, result) {
+    if (err) throw err;
+    start();
+  });
+}
+
+async function updateManager() {
+  let selectUpdate = await inquirer.prompt([
+    {
+      type: "list",
+      message: "Which employee's manager would you like to update?",
+      name: "managerID",
+      choices: function () {
+        let choiceArr = [];
+        for (let i = 0; i < employees.length; i++) {
+          let tempChoice = {
+            name: employees[i].name,
+            value: employees[i].value,
+          };
+          choiceArr.push(tempChoice);
+        }
+
+        return choiceArr;
+      },
+    },
+    {
+      type: "list",
+      message:
+        "Which employee do you want to set as manager for the selected employee?",
+      name: "newManager",
+      choices: function () {
+        let choiceArr = [
+          {
+            name: "None",
+            value: null,
+          },
+        ];
+        for (let i = 0; i < employees.length; i++) {
+          let tempChoice = {
+            name: employees[i].name,
+            value: employees[i].value,
+          };
+          choiceArr.push(tempChoice);
+        }
+
+        return choiceArr;
+      },
+    },
+  ]);
+
+  let newQuery = new updateQuery(
+    parseInt(selectUpdate.managerID),
+    parseInt(selectUpdate.newManager)
+  );
+
+  connection.query(newQuery.updateManager_Q(), function (err, result) {
+    if (err) throw err;
+    start();
+  });
+}
+
+async function viewJobs() {
+  let newQuery = new idQuery();
+
+  connection.query(newQuery.viewAll_Q(), function (err, result) {
     if (err) throw err;
     console.table(result);
     start();
@@ -260,6 +411,32 @@ function getDepartment() {
   });
 }
 
+// function getManager() {
+//   managers = [];
+//   connection.query(
+//     "SELECT id, first_name, last_name, manager_id FROM employee",
+//     function (err, results) {
+//       let arr = [];
+//       for (let i = 0; i < results.length; i++) {
+//         if (results[i].manager_id != null) {
+//           let temp = {
+//             name: results[i].first_name + " " + results[i].last_name,
+//             value: results[i].manager_id,
+//           };
+//           arr.push(temp);
+//         }
+//         console.log(arr);
+//         if (results[i].id) {
+//           let tempManager = {
+//             name: results[i].first_name + " " + results[i].last_name,
+//             value: results[i].manager_id,
+//           };
+//           managers.push(tempManager);
+//         }
+//       }
+//     }
+//   );
+// }
 function getManager() {
   managers = [];
   connection.query(
@@ -269,7 +446,7 @@ function getManager() {
         if (results[i].manager_id != null) {
           let tempManager = {
             name: results[i].first_name + " " + results[i].last_name,
-            value: results[i].id,
+            value: results[i].manager_id,
           };
           managers.push(tempManager);
         }
