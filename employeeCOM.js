@@ -547,45 +547,19 @@ function getDepartment() {
   });
 }
 
-// function getManager() {
-//   managers = [];
-//   connection.query(
-//     "SELECT id, first_name, last_name, manager_id FROM employee",
-//     function (err, results) {
-//       let arr = [];
-//       for (let i = 0; i < results.length; i++) {
-//         if (results[i].manager_id != null) {
-//           let temp = {
-//             name: results[i].first_name + " " + results[i].last_name,
-//             value: results[i].manager_id,
-//           };
-//           arr.push(temp);
-//         }
-//         console.log(arr);
-//         if (results[i].id) {
-//           let tempManager = {
-//             name: results[i].first_name + " " + results[i].last_name,
-//             value: results[i].manager_id,
-//           };
-//           managers.push(tempManager);
-//         }
-//       }
-//     }
-//   );
-// }
 function getManager() {
   managers = [];
   connection.query(
-    "SELECT id, first_name, last_name, manager_id FROM employee",
+    `SELECT staff.id, staff.first_name, staff.last_name
+    FROM employee staff
+    INNER JOIN employee on employee.manager_id = staff.id`,
     function (err, results) {
       for (let i = 0; i < results.length; i++) {
-        if (results[i].manager_id != null) {
-          let tempManager = {
-            name: results[i].first_name + " " + results[i].last_name,
-            value: results[i].manager_id,
-          };
-          managers.push(tempManager);
-        }
+        let tempManager = {
+          name: results[i].first_name + " " + results[i].last_name,
+          value: results[i].id,
+        };
+        managers.push(tempManager);
       }
     }
   );
