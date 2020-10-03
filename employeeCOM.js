@@ -78,12 +78,14 @@ async function start() {
       updateManager();
       break;
     case "Add Department":
+      addDepartment();
       break;
     case "Remove Department":
       break;
     case "Update Department":
       break;
-    case "View All Role":
+    case "View All Roles":
+      viewJobs();
       break;
     case "Add Role":
       break;
@@ -294,12 +296,31 @@ async function updateManager() {
   });
 }
 
-async function viewJobs() {
+function viewJobs() {
   let newQuery = new idQuery();
 
-  connection.query(newQuery.viewAll_Q(), function (err, result) {
+  connection.query(newQuery.viewRoles_Q(), function (err, result) {
     if (err) throw err;
     console.table(result);
+    start();
+  });
+}
+
+async function addDepartment() {
+  let newDepartment = await inquirer.prompt([
+    {
+      type: "input",
+      name: "newDept",
+      message: "What department would you like to add?",
+      validate: verifyName,
+    },
+  ]);
+
+  let newQuery = new idQuery(newDepartment.newDept);
+
+  connection.query(newQuery.addDepartment_Q(), function (err, result) {
+    if (err) throw err;
+    console.log("You succesfully add a department.");
     start();
   });
 }
