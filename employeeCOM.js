@@ -84,9 +84,6 @@ async function start() {
     case "Remove Department":
       removeDepartment();
       break;
-    case "Update Department":
-      updateDepartment();
-      break;
     case "View All Roles":
       viewJobs();
       break;
@@ -120,7 +117,6 @@ const introQuestion = [
       "Update Employee Manager",
       "Add Department",
       "Remove Department",
-      "Update Department",
       "View All Roles",
       "Add Role",
       "Remove Role",
@@ -316,6 +312,7 @@ function viewJobs() {
   });
 }
 
+// Create function to add an Department
 async function addDepartment() {
   let newDepartment = await inquirer.prompt([
     {
@@ -449,64 +446,6 @@ async function addRole() {
   });
 }
 
-// Update a departments
-// Work in progress
-//
-async function updateDepartment() {
-  let deptUpdate = await inquirer.prompt([
-    {
-      type: "list",
-      message: "Which department would you like to update?",
-      name: "updateDept",
-      choices: function () {
-        let choiceArr = [];
-        for (let i = 0; i < departments.length; i++) {
-          let tempChoice = {
-            name: departments[i].name,
-            value: departments[i].value,
-          };
-          choiceArr.push(tempChoice);
-        }
-
-        return choiceArr;
-      },
-    },
-    {
-      type: "list",
-      message:
-        "Which employee do you want to set as manager for the selected employee?",
-      name: "newManager",
-      choices: function () {
-        let choiceArr = [
-          {
-            name: "None",
-            value: null,
-          },
-        ];
-        for (let i = 0; i < employees.length; i++) {
-          let tempChoice = {
-            name: employees[i].name,
-            value: employees[i].value,
-          };
-          choiceArr.push(tempChoice);
-        }
-
-        return choiceArr;
-      },
-    },
-  ]);
-
-  let newQuery = new updateQuery(
-    parseInt(deptUpdate.updateDept),
-    parseInt(deptUpdate.newManager)
-  );
-
-  connection.query(newQuery.updateManager_Q(), function (err, result) {
-    if (err) throw err;
-    start();
-  });
-}
-
 // Create function to remove an role
 function removeRole() {
   inquirer
@@ -514,7 +453,7 @@ function removeRole() {
       {
         name: "removePos",
         type: "list",
-        message: "Which employee doe you want to remove?",
+        message: "Which employee do you want to remove?",
         choices: function () {
           let choiceArr = [];
           for (let i = 0; i < jobs.length; i++) {
