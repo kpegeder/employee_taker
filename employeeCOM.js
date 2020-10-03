@@ -3,6 +3,7 @@ const mysql = require("mysql");
 const inquirer = require("inquirer");
 const idQuery = require("./lib/idQuery");
 const updateQuery = require("./lib/updateQuery");
+const nameQuery = require("./lib/nameQuery");
 let employees = [];
 let jobs = [];
 let departments = [];
@@ -83,11 +84,13 @@ async function start() {
     case "Remove Department":
       break;
     case "Update Department":
+      updateDepartment();
       break;
     case "View All Roles":
       viewJobs();
       break;
     case "Add Role":
+      addRole();
       break;
     case "Remove Role":
       break;
@@ -237,12 +240,13 @@ async function updateRole() {
 
   connection.query(newQuery.updateJob_Q(), function (err, result) {
     if (err) throw err;
+    console.log("You have succesfully update an employee's role.");
     start();
   });
 }
 
 async function updateManager() {
-  let selectUpdate = await inquirer.prompt([
+  let managerUpdate = await inquirer.prompt([
     {
       type: "list",
       message: "Which employee's manager would you like to update?",
@@ -286,12 +290,13 @@ async function updateManager() {
   ]);
 
   let newQuery = new updateQuery(
-    parseInt(selectUpdate.managerID),
-    parseInt(selectUpdate.newManager)
+    parseInt(managerUpdate.managerID),
+    parseInt(managerUpdate.newManager)
   );
 
   connection.query(newQuery.updateManager_Q(), function (err, result) {
     if (err) throw err;
+    console.log("You have succesfully updated an employee's manager.");
     start();
   });
 }
@@ -385,6 +390,116 @@ function removeEmployee() {
         }
       );
     });
+}
+
+// Create function to add a role
+async function addRole() {
+  let newJob = await inquirer.prompt([
+    {
+      type: "input",
+      name: "newPos",
+      message: "What role would you like to add?",
+      validate: verifyName,
+    },
+    {
+      type: "number",
+      name: "newSalary",
+      message: "What is the salary for the new role?",
+      validate: function (name) {
+        if (name === "") {
+          return "Please enter a number";
+        } else if (Number.isNaN(name)) {
+          return "Please don't enter a number";
+        } else if (name.length > 11) {
+          return "Please enter a smaller number";
+        }
+
+        return true;
+      },
+    },
+    {
+      type: "list",
+      name: "Dept",
+      message: "What department is the new role in?",
+      choices: function () {
+        let choiceArr = [];
+        for (let i = 0; i < departments.length; i++) {
+          let tempChoice = {
+            name: departments[i].name,
+            value: departments[i].value,
+          };
+          choiceArr.push(tempChoice);
+        }
+        return choiceArr;
+      },
+    },
+  ]);
+
+  let newQuery = new nameQuery(newJob.Dept, newJob.newPos, newJob.newSalary);
+
+  connection.query(newQuery.addRole_Q(), function (err, result) {
+    if (err) throw err;
+    console.log("You succesfully add a role.");
+    start();
+  });
+}
+
+// Update a departments
+// Work in progress
+//
+async function updateDepartment() {
+  let deptUpdate = await inquirer.prompt([
+    {
+      type: "list",
+      message: "Which department would you like to update?",
+      name: "updateDept",
+      choices: function () {
+        let choiceArr = [];
+        for (let i = 0; i < departments.length; i++) {
+          let tempChoice = {
+            name: departments[i].name,
+            value: departments[i].value,
+          };
+          choiceArr.push(tempChoice);
+        }
+
+        return choiceArr;
+      },
+    },
+    {
+      type: "list",
+      message:
+        "Which employee do you want to set as manager for the selected employee?",
+      name: "newManager",
+      choices: function () {
+        let choiceArr = [
+          {
+            name: "None",
+            value: null,
+          },
+        ];
+        for (let i = 0; i < employees.length; i++) {
+          let tempChoice = {
+            name: employees[i].name,
+            value: employees[i].value,
+          };
+          choiceArr.push(tempChoice);
+        }
+
+        return choiceArr;
+      },
+    },
+  ]);
+
+  let newQuery = new updateQuery(
+    parseInt(deptUpdate.updateDept),
+    parseInt(deptUpdate.newManager)
+  );
+
+  connection.query(newQuery.updateManager_Q(), function (err, result) {
+    if (err) throw err;
+    start();
+  });
 }
 
 function getEmployee() {
