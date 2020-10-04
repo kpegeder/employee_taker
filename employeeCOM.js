@@ -94,6 +94,7 @@ async function start() {
       removeRole();
       break;
     case "View Department Salary":
+      departmentBudget();
       break;
 
     default:
@@ -173,7 +174,6 @@ async function viewManager() {
       name: "managerChoice",
       choices: function () {
         let choiceArr = [];
-        console.log(managers);
         for (let i = 0; i < managers.length; i++) {
           let tempChoice = {
             name: managers[i].name,
@@ -495,7 +495,6 @@ function removeDepartment() {
         message: "Which employee doe you want to remove?",
         choices: function () {
           let choiceArr = [];
-          console.log(departments);
           for (let i = 0; i < departments.length; i++) {
             let tempChoice = {
               name: departments[i].name,
@@ -523,6 +522,39 @@ function removeDepartment() {
         }
       );
     });
+}
+
+async function departmentBudget() {
+  let selectDept = await inquirer.prompt([
+    {
+      type: "list",
+      message: "What department would you like to see?",
+      name: "departmentChoice",
+      choices: function () {
+        let choiceArr = [];
+        for (let i = 0; i < departments.length; i++) {
+          let tempChoice = {
+            name: departments[i].name,
+            value: departments[i].value,
+          };
+          choiceArr.push(tempChoice);
+        }
+        return choiceArr;
+      },
+    },
+  ]);
+
+  let newQuery = new idQuery(parseInt(selectDept.departmentChoice));
+
+  connection.query(newQuery.deptSalary(), function (err, result) {
+    if (err) throw err;
+    let salaries = 0;
+    for (let j = 0; j < result.length; j++) {
+      salaries += result[j].salary;
+    }
+    console.log("The department spends $" + salaries + " on salary.");
+    start();
+  });
 }
 
 function getEmployee() {
@@ -577,12 +609,16 @@ function getManager() {
     FROM employee staff
     INNER JOIN employee on employee.manager_id = staff.id`,
     function (err, results) {
+      let unique = [];
       for (let i = 0; i < results.length; i++) {
-        let tempManager = {
-          name: results[i].first_name + " " + results[i].last_name,
-          value: results[i].id,
-        };
-        managers.push(tempManager);
+        if (!unique[results[i].id]) {
+          let tempManager = {
+            name: results[i].first_name + " " + results[i].last_name,
+            value: results[i].id,
+          };
+          managers.push(tempManager);
+          unique[results[i].id] = 1;
+        }
       }
     }
   );
