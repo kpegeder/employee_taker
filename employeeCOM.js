@@ -189,7 +189,7 @@ async function viewManager() {
 
   let newQuery = new idQuery(parseInt(selectManager.managerChoice));
 
-  connection.query(newQuery.viewDepartment_Q(), function (err, result) {
+  connection.query(newQuery.viewManager_Q(), function (err, result) {
     if (err) throw err;
     console.table(result);
     start();
