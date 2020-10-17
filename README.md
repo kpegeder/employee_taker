@@ -33,7 +33,7 @@ Instructions to use the program are shown below
 1. Run node emploeesCOM.js
 2. Select from the options
 
-![Demo](./Develop/assets/images/demo.gif)
+![Demo](./assets/images/demo.gif)
 
 To watch a [video](https://drive.google.com/file/d/1RBegurW2hJjSHCUJ7cpQCVmKpb6ujC4r/view) of the demo
 
