@@ -78,6 +78,9 @@ async function start() {
     case "Update Employee Manager":
       updateManager();
       break;
+    case "View All Departments":
+      viewAllDepartments();
+      break;
     case "Add Department":
       addDepartment();
       break;
@@ -116,6 +119,7 @@ const introQuestion = [
       "Remove Employee",
       "Update Employee Role",
       "Update Employee Manager",
+      "View All Departments",
       "Add Department",
       "Remove Department",
       "View All Roles",
@@ -298,6 +302,16 @@ async function updateManager() {
   connection.query(newQuery.updateManager_Q(), function (err, result) {
     if (err) throw err;
     console.log("You have succesfully updated an employee's manager.");
+    start();
+  });
+}
+
+function viewAllDepartments() {
+  let newQuery = new idQuery();
+
+  connection.query(newQuery.viewAllDepartments_Q(), function (err, result) {
+    if (err) throw err;
+    console.table(result);
     start();
   });
 }
